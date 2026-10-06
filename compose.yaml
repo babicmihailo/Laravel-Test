@@ -1,0 +1,62 @@
+# docker compose up                   development with hot reload, http://localhost:8000
+# docker compose run --rm test        run the tests
+# docker compose up prod              production, http://localhost:8080 (needs .env.docker, see the README)
+
+# The app and test containers run docker/dev-entrypoint.sh first (setup), then their command.
+
+services:
+  # PHP: changes to PHP files show up on the next page load
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    init: true
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www/html
+      # The container's own packages, so they don't mix with the ones on your computer
+      - vendor:/var/www/html/vendor
+
+  # Vite: changes to React and CSS files show up in the browser without a reload
+  vite:
+    image: node:22-slim
+    working_dir: /var/www/html
+    # Vite runs directly (not through npm run dev), so on stop it gets to delete public/hot
+    command: sh -c "npm install && exec node_modules/.bin/vite"
+    init: true
+    ports:
+      - "5173:5173"
+    environment:
+      # File changes made on Windows/macOS don't reach the container as events,
+      # so Vite checks the files for changes itself
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - .:/var/www/html
+      - node_modules:/var/www/html/node_modules
+
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: php artisan test
+    volumes:
+      - .:/var/www/html
+      - vendor:/var/www/html/vendor
+    profiles: [test]
+
+  prod:
+    build: .
+    ports:
+      - "8080:80"
+    env_file: .env.docker
+    volumes:
+      - prod-data:/data
+    restart: unless-stopped
+    profiles: [prod]
+
+volumes:
+  vendor:
+  node_modules:
+  prod-data:

@@ -25,8 +25,7 @@ Open http://localhost:8000.
 docker compose up --build
 ```
 
-Open http://localhost:8000. The project folder is mounted into the containers, so changes show up right away: PHP changes on the next page load, React and CSS changes instantly through Vite (port 5173).
-The first start installs the packages and creates `database/database.sqlite` with the sample data, the database is the same file you use when running locally.
+Open http://localhost:8000.
 
 **Production** (no sample data):
 
